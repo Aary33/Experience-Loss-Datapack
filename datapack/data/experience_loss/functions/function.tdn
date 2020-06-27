@@ -1,0 +1,46 @@
+@on compile
+@priority 1
+
+#Dependencies
+var calculate = resource</calculate>
+var take_xp = resource</take_xp>
+
+#Initialize objectives
+define objective xpLoss.death minecraft.custom:minecraft.deaths {"text":"XP Loss Death Trigger"}
+define objective xpLoss.count dummy {"text":"XP Loss Count"}
+define objective xpLoss.tmp dummy {"text":"XP Loss Placeholder"}
+
+
+define function calculate {
+    store result score @s xpLoss.count 
+        experience query @s levels
+    
+    
+    #Set percentage lost
+    set @s -> xpLoss.tmp = @s -> xpLoss.count
+    set @s -> xpLoss.tmp *= percentLoss -> xpLoss.count
+    set @s -> xpLoss.tmp /= #100 -> xpLoss.count
+    
+}
+
+define function take_xp {
+    experience add @s -1 levels
+    
+    set @s -> xpLoss.tmp -= 1
+    
+    #Loop until experience levels are drained
+    unless score @s xpLoss.tmp matches ..0
+        function /
+}
+
+define function has_died {
+    function $calculate
+    
+    #Only take experience if keepInventory is true
+    store result score keepInventory xpLoss.count
+        gamerule keepInventory
+    if score keepInventory xpLoss.count matches 1
+        function $take_xp
+    
+    set @s -> xpLoss.death = 0
+}

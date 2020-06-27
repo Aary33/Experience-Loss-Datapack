@@ -1,0 +1,54 @@
+@on compile
+@priority 0
+
+#Config
+var default_percent = 50
+
+#Dependencies
+var second = resource</second>
+var has_died = resource<experience_loss:function/has_died>
+
+define function second {
+    #Check death
+    execute as @a[scores={xpLoss.death=1..}] at @s run function $has_died
+    
+    #Recursive loop
+    schedule function $second 1s replace
+}
+
+define function tick {
+    @tag tick
+}
+
+define function init {
+    @tag load
+    
+    
+    scoreboard objectives add xpLoss.death minecraft.custom:minecraft.deaths {"text":"XP Loss Death Trigger"}
+    scoreboard objectives add xpLoss.count dummy {"text":"XP Loss Count"}
+    scoreboard objectives add xpLoss.tmp dummy {"text":"XP Loss Placeholder"}
+    
+    #Set default percentage loss
+    #
+    #
+    unless score percentLoss xpLoss.count matches 0..100 run scoreboard players set percentLoss xpLoss.count $default_percent
+    set #100 -> xpLoss.count = 100
+    
+    
+    #Get gamerule keepInventory query
+    #
+    #
+    store result score keepInventory xpLoss.count
+        gamerule keepInventory
+    
+    schedule function $second 1s replace
+    tellraw @a ["",{"text":"> ","color":"gray"},{"text":"[Experience Loss]","color":"green"},{"text":"[1.0.0]","color":"dark_gray"},{"text":" module loaded.","color":"gray"}]    
+    
+}
+
+
+define function uninstall {
+    scoreboard objectives remove xpLoss.death
+    scoreboard objectives remove xpLoss.count
+    scoreboard objectives remove xpLoss.tmp
+}
